@@ -93,6 +93,7 @@ public class ThrottleStepTest {
         assertThat(
                 blockageReasons,
                 hasItem(Messages._ThrottleQueueTaskDispatcher_MaxCapacityOnNode(1).toString()));
+        TestUtil.hasPauseActionForItem(queuedItem);
         assertEquals(1, agent.toComputer().countBusy());
         TestUtil.hasPlaceholderTaskForRun(agent, firstJobFirstRun);
 
@@ -188,6 +189,8 @@ public class ThrottleStepTest {
         WorkflowRun thirdJobFirstRun = thirdJob.scheduleBuild2(0).waitForStart();
         j.waitForMessage("Still waiting to schedule task", thirdJobFirstRun);
         assertFalse(j.jenkins.getQueue().isEmpty());
+        Queue.Item queuedItem = j.jenkins.getQueue().getItems()[0];
+        TestUtil.hasPauseActionForItem(queuedItem);
         assertEquals(1, firstAgent.toComputer().countBusy());
         TestUtil.hasPlaceholderTaskForRun(firstAgent, firstJobFirstRun);
 
@@ -277,6 +280,9 @@ public class ThrottleStepTest {
         j.waitForMessage("Still waiting to schedule task", run1);
         j.waitForMessage("Still waiting to schedule task", run2);
 
+        Queue.Item queuedItem = j.jenkins.getQueue().getItems()[0];
+        TestUtil.hasPauseActionForItem(queuedItem);
+
         SemaphoreStep.success("wait-first-branch-a-job/1", null);
         SemaphoreStep.waitForStart("wait-first-branch-c-job/1", run1);
         assertEquals(1, firstAgent.toComputer().countBusy());
@@ -330,6 +336,8 @@ public class ThrottleStepTest {
         j.waitForMessage("Still waiting to schedule task", thirdJobFirstRun);
         j.jenkins.getQueue().maintain();
         assertFalse(j.jenkins.getQueue().isEmpty());
+        Queue.Item queuedItem = j.jenkins.getQueue().getItems()[0];
+        TestUtil.hasPauseActionForItem(queuedItem);
         assertEquals(1, firstAgent.toComputer().countBusy());
         TestUtil.hasPlaceholderTaskForRun(firstAgent, firstJobFirstRun);
 
@@ -421,6 +429,8 @@ public class ThrottleStepTest {
         WorkflowRun secondJobFirstRun = secondJob.scheduleBuild2(0).waitForStart();
         j.waitForMessage("Still waiting to schedule task", secondJobFirstRun);
         assertFalse(j.jenkins.getQueue().isEmpty());
+        Queue.Item queuedItem = j.jenkins.getQueue().getItems()[0];
+        TestUtil.hasPauseActionForItem(queuedItem);
 
         assertEquals(1, agent.toComputer().countBusy());
         for (Executor e : agent.toComputer().getExecutors()) {
@@ -503,6 +513,7 @@ public class ThrottleStepTest {
         return "throttle(["
                 + StringUtils.join(quoted, ", ")
                 + "]) {\n"
+                + "stage('wait') {\n"
                 + "  echo 'hi there'\n"
                 + "  node('"
                 + label
@@ -511,6 +522,7 @@ public class ThrottleStepTest {
                 + jobName
                 + "-job'\n"
                 + "  }\n"
+                + "}\n"
                 + "}\n";
     }
 
